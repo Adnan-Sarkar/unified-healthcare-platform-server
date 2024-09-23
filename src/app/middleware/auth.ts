@@ -19,12 +19,12 @@ const auth = (...userRoles: (keyof typeof UserRole)[]) => {
         config.JWT_ACCESS_SECRET as string
       ) as JwtPayload;
 
-      // req.user = {
-      //   id: verifiedUser.id,
-      //   name: verifiedUser.name,
-      //   email: verifiedUser.email,
-      //   role: verifiedUser.role,
-      // };
+      req.user = {
+        id: verifiedUser.id,
+        name: verifiedUser.name,
+        email: verifiedUser.email,
+        role: verifiedUser.role,
+      };
 
       if (userRoles.length > 0 && !userRoles.includes(verifiedUser.role)) {
         throw new Error("You are forbidden!");
