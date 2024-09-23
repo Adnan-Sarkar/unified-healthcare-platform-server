@@ -1,9 +1,25 @@
-import { ResultSetHeader } from "mysql2";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
 import db from "../../database/db";
 import { TUser } from "../../types";
 
+// get all users
+const getAllUsers = async () => {
+  const [rows]: [RowDataPacket[], any] = await db.query(
+    "SELECT id, firstName, lastName, email, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, profilePicture FROM user"
+  );
+
+  return rows;
+};
+
 // get user information
-const getUserInformation = async () => {};
+const getUserInformation = async (userId: string) => {
+  const [rows]: [RowDataPacket[], any] = await db.query(
+    "SELECT id, firstName, lastName, email, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, profilePicture FROM user WHERE id = ?",
+    [userId]
+  );
+
+  return rows[0];
+};
 
 // update user information
 const updateUserInformation = async (
@@ -51,7 +67,7 @@ const updateUserInformation = async (
   valuesToUpdate.push(userId);
 
   // Build the SQL query dynamically
-  const updateQuery = `UPDATE users SET ${fieldsToUpdate.join(
+  const updateQuery = `UPDATE user SET ${fieldsToUpdate.join(
     ", "
   )} WHERE id = ?`;
 
@@ -74,12 +90,25 @@ const updateUserInformation = async (
  */
 
 // change user status
-const changeUserStatus = async () => {};
+const changeUserStatus = async (
+  status: { accountStatus: string },
+  userId: string
+) => {
+  const { accountStatus } = status;
+
+  const [result]: [ResultSetHeader, any] = await db.query(
+    "UPDATE user SET accountStatus = ? WHERE id = ?",
+    [accountStatus, userId]
+  );
+
+  return result;
+};
 
 // get user meta-data
 const getUserMetadata = async () => {};
 
 export const userService = {
+  getAllUsers,
   getUserInformation,
   updateUserInformation,
   changeUserStatus,

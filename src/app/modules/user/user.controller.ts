@@ -4,9 +4,22 @@ import sendResponse from "../../utils/sendResponse";
 import { userService } from "./user.service";
 import AppError from "../../error/AppError";
 
+// get all users
+const getAllUsers = catchAsync(async (_req, res) => {
+  const result = await userService.getAllUsers();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Users retrived successfully",
+    data: result,
+  });
+});
+
 // get user information
 const getUserInformation = catchAsync(async (req, res) => {
-  const result = await userService.getUserInformation();
+  const { id } = req.params;
+  const result = await userService.getUserInformation(id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -35,13 +48,18 @@ const updateUserInformation = catchAsync(async (req, res) => {
 
 // change user status
 const changeUserStatus = catchAsync(async (req, res) => {
-  const result = await userService.changeUserStatus();
+  const { id } = req.params;
+  const result = await userService.changeUserStatus(req.body, id);
+
+  if (result?.affectedRows !== 1) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Something went wrong!");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "User status changed successfully",
-    data: result,
+    data: null,
   });
 });
 
@@ -58,6 +76,7 @@ const getUserMetadata = catchAsync(async (req, res) => {
 });
 
 export const userController = {
+  getAllUsers,
   getUserInformation,
   updateUserInformation,
   changeUserStatus,

@@ -19,7 +19,8 @@ const updateUserSchema = z.object({
 
   password: z
     .string()
-    .min(6, { message: "Password should be at least 6 digits" }),
+    .min(6, { message: "Password should be at least 6 digits" })
+    .optional(),
 
   phone: z
     .string()
