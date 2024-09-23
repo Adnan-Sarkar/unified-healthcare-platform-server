@@ -1,8 +1,8 @@
-import { uuid } from "uuidv4";
+import { v4 as uuidv4 } from "uuid";
 
 // Example usage in a service or utility function
 const generateUniqueId = () => {
-  return uuid();
+  return uuidv4();
 };
 
 export default generateUniqueId;
