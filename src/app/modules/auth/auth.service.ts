@@ -17,7 +17,7 @@ interface RegistrationInput {
   location: string;
   bloodGroup: string;
   dateOfBirth: string;
-  Profilepicture: string;
+  profilePicture: string;
 }
 
 interface LoginInput {
@@ -77,7 +77,7 @@ const registration = async (registrationInfo: RegistrationInput) => {
     gender,
     dateOfBirth,
     bloodGroup,
-    Profilepicture,
+    profilePicture,
   } = registrationInfo;
 
   const role = "user";
@@ -91,7 +91,7 @@ const registration = async (registrationInfo: RegistrationInput) => {
   );
 
   const [result]: [ResultSetHeader, any] = await db.query(
-    `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, Profilepicture)
+    `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, profilePicture)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
@@ -106,7 +106,7 @@ const registration = async (registrationInfo: RegistrationInput) => {
       role,
       accountStatus,
       bloodGroup,
-      Profilepicture,
+      profilePicture,
     ]
   );
 
