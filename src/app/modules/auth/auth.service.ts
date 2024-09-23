@@ -31,7 +31,7 @@ const login = async (loginInfo: LoginInput) => {
 
   // check user is exists or not
   const [rows]: [RowDataPacket[], any] = await db.query(
-    `SELECT * FROM users WHERE email = ?`,
+    `SELECT * FROM user WHERE email = ?`,
     [email]
   );
 
@@ -84,15 +84,21 @@ const registration = async (registrationInfo: RegistrationInput) => {
   const accountStatus = "active";
   const id = generateUniqueId();
 
+  // hash password
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.SALT_ROUNDS)
+  );
+
   const [result]: [ResultSetHeader, any] = await db.query(
-    `INSERT INTO users (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, Profilepicture)
+    `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, Profilepicture)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       firstName,
       lastName,
       email,
-      password,
+      hashedPassword,
       gender,
       phone,
       location,
