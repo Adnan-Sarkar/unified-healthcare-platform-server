@@ -25,7 +25,6 @@ export type TUser = {
   dateOfBirth: string;
   role: TUserRole;
   bloodGroup: TBloodGroup;
-  age: number;
   profilePicture: string;
 };
 
@@ -39,4 +38,32 @@ export type TPatient = {
 export type TPatientDocument = {
   patientId: string;
   documentImage: string;
+};
+
+export type TDoctor = {
+  id: string;
+  userId: string;
+  doctorBio: string;
+  professionStartDate: string;
+  consultationFee: number;
+};
+
+export type TDoctorQualification = {
+  doctorId: string;
+  qualifications: string;
+};
+
+export type TDoctorSpecialization = {
+  doctorId: string;
+  specializationId: string;
+};
+
+export type TSpecialization = {
+  id: string;
+  name: string;
+};
+
+export type TDoctorDayTime = {
+  doctorId: string;
+  dayTimeId: string;
 };
