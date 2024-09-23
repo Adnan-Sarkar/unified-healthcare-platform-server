@@ -28,3 +28,15 @@ export type TUser = {
   age: number;
   profilePicture: string;
 };
+
+export type TPatient = {
+  id: string;
+  userId: string;
+  allergies: string;
+  medicalHistory: string;
+};
+
+export type TPatientDocument = {
+  patientId: string;
+  documentImage: string;
+};
