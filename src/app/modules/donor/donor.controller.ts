@@ -2,34 +2,86 @@ import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { donorService } from "./donor.service";
+import AppError from "../../error/AppError";
 
 // register donor
 const registerDonor = catchAsync(async (req, res) => {
-  const result = await donorService.registerDonor();
+  const result = await donorService.registerDonor(req.body, req.user);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Donor registration failed");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Donor registration successfull",
-    data: result,
+    data: null,
   });
 });
 
-// get all donation requests
-const getAllDonationRequests = catchAsync(async (req, res) => {
-  const result = await donorService.getAllDonationRequests();
+// create donation request
+const createDonationRequest = catchAsync(async (req, res) => {
+  const result = await donorService.createDonationRequest(req.body, req.user);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Donation request creation failed"
+    );
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Donor requests retrived successfully",
+    message: "Donation request created successfully",
+    data: null,
+  });
+});
+
+// get my donation requests
+const getMyDonationRequests = catchAsync(async (req, res) => {
+  const query = req.query as {
+    requestStatus: "pending" | "approved" | "rejected";
+  };
+  const result = await donorService.getMyDonationRequests(req.user, query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Donation requests retrived successfully",
     data: result,
   });
 });
 
-// update donation status
-const updateDonationStatus = catchAsync(async (req, res) => {
-  const result = await donorService.updateDonationStatus();
+// get my donation requests from requester
+const getMyDonationRequestsFromRequester = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const query = req.query as {
+    requestStatus: "pending" | "approved" | "rejected";
+  };
+
+  const result = await donorService.getMyDonationRequestsFromRequester(
+    id,
+    query
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Donation request from requesters retrived successfully",
+    data: result,
+  });
+});
+
+// update donation request
+const updateDonationRequest = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await donorService.updateDonationRequest(
+    req.body,
+    req.user,
+    id
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -41,7 +93,15 @@ const updateDonationStatus = catchAsync(async (req, res) => {
 
 // update donor information
 const updateDonorInformation = catchAsync(async (req, res) => {
-  const result = await donorService.updateDonationStatus();
+  const { id } = req.params;
+  const result = await donorService.updateDonorInformation(req.body, id);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Donor information update failed"
+    );
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -53,20 +113,22 @@ const updateDonorInformation = catchAsync(async (req, res) => {
 
 // message to donor-requester
 const sendMessage = catchAsync(async (req, res) => {
-  const result = await donorService.updateDonationStatus();
+  const result = await donorService.sendMessage();
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Donor information updated successfully",
+    message: "Donor message sent successfully",
     data: result,
   });
 });
 
 export const donorController = {
   registerDonor,
-  getAllDonationRequests,
-  updateDonationStatus,
+  createDonationRequest,
+  getMyDonationRequests,
+  getMyDonationRequestsFromRequester,
+  updateDonationRequest,
   updateDonorInformation,
   sendMessage,
 };
