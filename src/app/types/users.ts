@@ -67,3 +67,21 @@ export type TDoctorDayTime = {
   doctorId: string;
   dayTimeId: string;
 };
+
+export type TDonor = {
+  id: string;
+  userId: string;
+  lastDonationDate: string;
+  isAvailable: number;
+};
+
+export type TDonationRequest = {
+  id: string;
+  donorId: string;
+  requesterId: string;
+  location: string;
+  donationDateTime: string;
+  emergencyContact: string;
+  isComplete: number;
+  requestStatus: "approved" | "pending" | "rejected";
+};
