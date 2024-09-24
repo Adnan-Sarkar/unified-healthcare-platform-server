@@ -1,7 +1,9 @@
 import catchAsync from "../utils/catchAsync";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import { config } from "../config";
 import { UserRole } from "../types";
+import AppError from "../error/AppError";
+import httpStatus from "http-status";
 
 const auth = (...userRoles: (keyof typeof UserRole)[]) => {
   return catchAsync((req, _res, next) => {
@@ -21,7 +23,7 @@ const auth = (...userRoles: (keyof typeof UserRole)[]) => {
 
       req.user = {
         id: verifiedUser.id,
-        name: verifiedUser.name,
+        accountStatus: verifiedUser.accountStatus,
         email: verifiedUser.email,
         role: verifiedUser.role,
       };
@@ -32,7 +34,16 @@ const auth = (...userRoles: (keyof typeof UserRole)[]) => {
         next();
       }
     } catch (error: any) {
-      next(error);
+      if (error instanceof TokenExpiredError) {
+        return next(
+          new AppError(
+            httpStatus.BAD_REQUEST,
+            "Token expired! Please log in again."
+          )
+        );
+      } else {
+        next(error);
+      }
     }
   });
 };
