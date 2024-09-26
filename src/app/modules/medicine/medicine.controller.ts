@@ -2,16 +2,40 @@ import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { medicineService } from "./medicine.service";
+import AppError from "../../error/AppError";
+
+// add new medicine category
+const addNewMedicineCategory = catchAsync(async (req, res) => {
+  const result = await medicineService.addNewMedicineCategory(req.body);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Failed to add new medicine category"
+    );
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "New medicine category added successfull",
+    data: null,
+  });
+});
 
 // add new medicine
 const addNewMedicine = catchAsync(async (req, res) => {
-  const result = await medicineService.addNewMedicine();
+  const result = await medicineService.addNewMedicine(req.body);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Failed to add new medicine");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Added new medicine successfull",
-    data: result,
+    data: null,
   });
 });
 
@@ -29,7 +53,8 @@ const getAllMedicines = catchAsync(async (req, res) => {
 
 // get single medicine by id
 const getSingleMedicineById = catchAsync(async (req, res) => {
-  const result = await medicineService.getSingleMedicineById();
+  const { id } = req.params;
+  const result = await medicineService.getSingleMedicineById(id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -41,29 +66,46 @@ const getSingleMedicineById = catchAsync(async (req, res) => {
 
 // update medicine information
 const updateMedicineInformation = catchAsync(async (req, res) => {
-  const result = await medicineService.updateMedicineInformation();
+  const { id } = req.params;
+  const result = await medicineService.updateMedicineInformation(req.body, id);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Failed to update medicine information"
+    );
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Medicine information updated successfully",
-    data: result,
+    data: null,
   });
 });
 
 // delete medicine information
 const deleteMedicineInformation = catchAsync(async (req, res) => {
-  const result = await medicineService.deleteMedicineInformation();
+  const { id } = req.params;
+  const result = await medicineService.deleteMedicineInformation(id);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Failed to delete medicine information"
+    );
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Medicine information deleted successfully",
-    data: result,
+    data: null,
   });
 });
 
 export const medicineController = {
+  addNewMedicineCategory,
   addNewMedicine,
   getAllMedicines,
   getSingleMedicineById,
