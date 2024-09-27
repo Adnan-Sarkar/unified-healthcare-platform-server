@@ -1,24 +1,44 @@
 import express from "express";
 import { blogController } from "./blog.controller";
+import auth from "../../middleware/auth";
+import validateRequest from "../../middleware/validateRequest";
+import { blogValidationSchema } from "./blog.validation";
 
 const router = express.Router();
 
 router.get("/", blogController.getAllBlogs);
 
+router.get("/related-blogs", blogController.getRelatedBlogs);
+
 router.get("/:id", blogController.getSingleBlog);
 
-router.get("/:id", blogController.getRelatedBlogs);
+router.post(
+  "/create-blog",
+  auth("user"),
+  validateRequest(blogValidationSchema.createblogValidationSchema),
+  blogController.createNewBlog
+);
 
-router.post("/create-blog", blogController.createNewBlog);
+router.post(
+  "/comment-blog/:id",
+  auth("user"),
+  validateRequest(blogValidationSchema.commentIntoBlogValidationSchema),
+  blogController.commentIntoBlog
+);
 
-router.post("/comment-blog", blogController.commentIntoBlog);
+router.post(
+  "/reaction-blog/:id",
+  auth("user"),
+  validateRequest(blogValidationSchema.reactionIntoBlogValidationSchema),
+  blogController.reactionIntoBlog
+);
 
-router.post("/reaction-blog", blogController.reactionIntoBlog);
+router.patch(
+  "/:id",
+  validateRequest(blogValidationSchema.updateBlogValidationSchema),
+  blogController.updateBlogById
+);
 
-router.post("/reaction-blog", blogController.reactionIntoBlog);
-
-router.patch("/:id", blogController.updateBlogById);
-
-router.delete("/:id", blogController.deleteBlog);
+router.delete("/:id", auth("user"), blogController.deleteBlog);
 
 export const blogRoutes = router;
