@@ -5,3 +5,4 @@ export * from "./users";
 export * from "./medicine";
 export * from "./hospital";
 export * from "./ambulance";
+export * from "./blog";
