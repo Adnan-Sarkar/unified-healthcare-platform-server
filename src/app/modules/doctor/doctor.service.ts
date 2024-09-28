@@ -50,7 +50,6 @@ const registerDoctor = async (doctorRegisterInfo: {
   } = userInfo;
   const { doctorBio, professionStartDate, consultationFee } = doctorInfo;
 
-  const role = "doctor";
   const accountStatus = "active";
   const newUserId = generateUniqueId();
   const doctorId = generateUniqueId();
@@ -72,8 +71,8 @@ const registerDoctor = async (doctorRegisterInfo: {
   try {
     // create new user
     const [userResult]: [ResultSetHeader, any] = await connection.query(
-      `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, Profilepicture)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, accountStatus, bloodGroup, Profilepicture)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newUserId,
         firstName,
@@ -84,7 +83,6 @@ const registerDoctor = async (doctorRegisterInfo: {
         phone,
         location,
         dateOfBirth,
-        role,
         accountStatus,
         bloodGroup,
         profilePicture,
@@ -98,18 +96,26 @@ const registerDoctor = async (doctorRegisterInfo: {
       );
     }
 
-    // get user id
-    const [newUserData]: [RowDataPacket[], any] = await connection.query(
-      `SELECT * FROM user WHERE email = ?`,
-      [email]
-    );
+    // create user and doctor role for this user
+    const roles = ["user", "doctor"];
+    for (const role of roles) {
+      // get role id
+      const [roleResult]: [RowDataPacket[], any] = await connection.query(
+        `SELECT id FROM roles WHERE name = ?`,
+        [role]
+      );
+      const roleId = roleResult[0]?.id;
 
-    const userId = newUserData[0]?.id;
+      await connection.query(
+        `INSERT INTO user_roles (userId, roleId) VALUES (?, ?)`,
+        [newUserId, roleId]
+      );
+    }
 
     // create new doctor
     const [result]: [ResultSetHeader, any] = await connection.query(
       `INSERT INTO doctor (id, userId, doctorBio, professionStartDate, consultationFee) VALUES (?, ?, ?, ?, ?)`,
-      [doctorId, userId, doctorBio, professionStartDate, consultationFee]
+      [doctorId, newUserId, doctorBio, professionStartDate, consultationFee]
     );
 
     // commit the transaction
