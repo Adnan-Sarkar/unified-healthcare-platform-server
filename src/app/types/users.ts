@@ -23,7 +23,6 @@ export type TUser = {
   location: string;
   accountStatus: TAccountStatus;
   dateOfBirth: string;
-  role: TUserRole;
   bloodGroup: TBloodGroup;
   profilePicture: string;
 };
