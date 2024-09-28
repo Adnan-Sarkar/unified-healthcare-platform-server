@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { config } from "../../config";
+import { PoolConnection } from "mysql2/promise";
 
 interface RegistrationInput {
   firstName: string;
@@ -48,13 +49,26 @@ const login = async (loginInfo: LoginInput) => {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid password");
   }
 
+  // get user roles
+  const [roles]: [RowDataPacket[], any] = await db.query(
+    `SELECT r.name
+     FROM user_roles AS ur
+    INNER JOIN roles AS r
+    ON ur.roleId = r.id
+    WHERE ur.userId = ?
+    `,
+    [user?.id]
+  );
+
+  const userRoles = roles?.map((row: any) => row?.name);
+
   // create token
   const token = jwt.sign(
     {
       id: user?.id,
       email: user?.email,
       accountStatus: user?.accountStatus,
-      role: user?.role,
+      roles: userRoles,
     },
     config.JWT_ACCESS_SECRET as string,
     {
@@ -80,7 +94,6 @@ const registration = async (registrationInfo: RegistrationInput) => {
     profilePicture,
   } = registrationInfo;
 
-  const role = "user";
   const accountStatus = "active";
   const id = generateUniqueId();
 
@@ -90,39 +103,65 @@ const registration = async (registrationInfo: RegistrationInput) => {
     Number(config.SALT_ROUNDS)
   );
 
-  const [result]: [ResultSetHeader, any] = await db.query(
-    `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, role, accountStatus, bloodGroup, profilePicture)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      id,
-      firstName,
-      lastName,
-      email,
-      hashedPassword,
-      gender,
-      phone,
-      location,
-      dateOfBirth,
-      role,
-      accountStatus,
-      bloodGroup,
-      profilePicture,
-    ]
-  );
+  let connection: PoolConnection;
 
-  /**
-     * {
-        "fieldCount": 0,
-        "affectedRows": 1,
-        "insertId": 123, // Or the id you provided manually
-        "serverStatus": 2,
-        "warningCount": 0,
-        "message": "",
-        "protocol41": true,
-        "changedRows": 0
-      }   
-     */
-  return result;
+  // Get a connection from the pool
+  connection = await db.getConnection();
+
+  // Start the transaction
+  await connection.beginTransaction();
+
+  try {
+    // create user
+    const [result]: [ResultSetHeader, any] = await connection.query(
+      `INSERT INTO user (id, firstName, lastName, email, password, gender, phone, location, dateOfBirth, accountStatus, bloodGroup, profilePicture)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        firstName,
+        lastName,
+        email,
+        hashedPassword,
+        gender,
+        phone,
+        location,
+        dateOfBirth,
+        accountStatus,
+        bloodGroup,
+        profilePicture,
+      ]
+    );
+
+    // get user role id
+    const [userRole]: [RowDataPacket[], any] = await connection.query(
+      `SELECT id FROM roles WHERE name = ?`,
+      ["user"]
+    );
+
+    const userRoleId = userRole[0]?.id;
+
+    // create user role
+    await connection.query(
+      `INSERT INTO user_roles (userId, roleId) VALUES (?, ?)`,
+      [id, userRoleId]
+    );
+
+    // commit the transaction
+    await connection.commit();
+
+    return result;
+  } catch (error) {
+    // rollback the transaction
+    await connection.rollback();
+    console.error("Transaction failed, rolling back:", error);
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "User registration failed!"
+    );
+  } finally {
+    // Release the connection back to the pool
+    connection.release();
+  }
 };
 
 export const authService = {
