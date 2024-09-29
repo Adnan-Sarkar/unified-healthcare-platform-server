@@ -6,7 +6,7 @@ import { cartValidationSchema } from "./cart.validation";
 
 const router = express.Router();
 
-router.post("/:id", cartController.getAllCartItems);
+router.get("/", auth("user"), cartController.getCartItems);
 
 router.post(
   "/add-to-cart",
@@ -15,6 +15,11 @@ router.post(
   cartController.addItemToCart
 );
 
-router.delete("/remove-to-cart", auth("user"), cartController.removeItemToCart);
+router.patch(
+  "/remove-from-cart",
+  auth("user"),
+  validateRequest(cartValidationSchema.removeItemToCartValidationSchema),
+  cartController.removeItemToCart
+);
 
 export const cartRoutes = router;

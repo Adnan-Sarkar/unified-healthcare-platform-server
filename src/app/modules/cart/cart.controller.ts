@@ -20,32 +20,36 @@ const addItemToCart = catchAsync(async (req, res) => {
   });
 });
 
-// remove item to cart
-const removeItemToCart = catchAsync(async (req, res) => {
-  const result = await cartService.removeItemToCart();
+// get cart items
+const getCartItems = catchAsync(async (req, res) => {
+  const result = await cartService.getCartItems(req.user);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Remove medicine to cart successfull",
+    message: "Retrived cart items successfully",
     data: result,
   });
 });
 
-// get all cart items
-const getAllCartItems = catchAsync(async (req, res) => {
-  const result = await cartService.getAllCartItems();
+// remove item to cart
+const removeItemToCart = catchAsync(async (req, res) => {
+  const result = await cartService.removeItemToCart(req.body, req.user);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Failed to remove item to cart");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Retrived all cart items successfully",
-    data: result,
+    message: "Remove item to cart successfull",
+    data: null,
   });
 });
 
 export const cartController = {
   addItemToCart,
   removeItemToCart,
-  getAllCartItems,
+  getCartItems,
 };
