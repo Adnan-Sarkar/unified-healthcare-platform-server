@@ -4,6 +4,7 @@ import generateUniqueId from "../../utils/generateUniqueId";
 import { TJWTPayload } from "../../types";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
+import { PoolConnection } from "mysql2/promise";
 
 // add item to cart
 const addItemToCart = async (
@@ -140,8 +141,116 @@ const removeItemToCart = async (
   }
 };
 
+// create order
+const createOrder = async (user: TJWTPayload) => {
+  const userId = user.id;
+
+  // get cart items
+  const [cartItems]: [RowDataPacket[], any] = await db.query(
+    `SELECT
+    ci.medicineId,
+    ci.quantity,
+    m.price
+     FROM cart c
+     JOIN cart_item ci ON c.id = ci.cartId
+     JOIN medicine m ON ci.medicineId = m.id
+     WHERE c.userId = ?`,
+    [userId]
+  );
+
+  if (cartItems.length === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Cart is empty");
+  }
+
+  // calculate total amount
+  const totalAmount = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  let connection: PoolConnection;
+
+  // Get a connection from the pool
+  connection = await db.getConnection();
+
+  // Start the transaction
+  await connection.beginTransaction();
+
+  try {
+    const orderId = generateUniqueId();
+
+    // create a new order
+    const [result]: [ResultSetHeader, any] = await connection.query(
+      `INSERT INTO order (id, userId, totalAmount) VALUES (?, ?, ?)`,
+      [orderId, userId, totalAmount]
+    );
+
+    // add order items
+    for (const item of cartItems) {
+      const [result]: [ResultSetHeader, any] = await connection.query(
+        `INSERT INTO order_item (id, orderId, medicineId, quantity, price) VALUES (?, ?, ?, ?, ?)`,
+        [
+          generateUniqueId(),
+          orderId,
+          item.medicineId,
+          item.quantity,
+          item.price,
+        ]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new AppError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          "Order item creation failed!"
+        );
+      }
+    }
+
+    // payment process
+    const paymentId = generateUniqueId();
+    const [paymentResult]: [ResultSetHeader, any] = await connection.query(
+      `INSERT INTO payment (id, orderId, amount, status) VALUES (?, ?, ?, ?)`,
+      [paymentId, orderId, totalAmount, "completed"]
+    );
+
+    if (paymentResult.affectedRows === 0) {
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Payment failed!");
+    }
+
+    // empty the cart
+    const [deleteResult]: [ResultSetHeader, any] = await connection.query(
+      `DELETE FROM cart_item WHERE cartId IN (SELECT id FROM cart WHERE userId = ?)`,
+      [userId]
+    );
+
+    if (deleteResult.affectedRows === 0) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Cart empty failed!"
+      );
+    }
+
+    // commit the transaction
+    await connection.commit();
+
+    return result;
+  } catch (error) {
+    // rollback the transaction
+    await connection.rollback();
+    console.error("Transaction failed, rolling back:", error);
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Order creation failed!"
+    );
+  } finally {
+    // Release the connection back to the pool
+    connection.release();
+  }
+};
+
 export const cartService = {
   addItemToCart,
   getCartItems,
   removeItemToCart,
+  createOrder,
 };

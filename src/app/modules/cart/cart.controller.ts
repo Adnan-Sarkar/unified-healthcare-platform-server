@@ -48,8 +48,25 @@ const removeItemToCart = catchAsync(async (req, res) => {
   });
 });
 
+// create order
+const createOrder = catchAsync(async (req, res) => {
+  const result = await cartService.createOrder(req.user);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Failed to create order");
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Order created successfully",
+    data: result,
+  });
+});
+
 export const cartController = {
   addItemToCart,
   removeItemToCart,
   getCartItems,
+  createOrder,
 };

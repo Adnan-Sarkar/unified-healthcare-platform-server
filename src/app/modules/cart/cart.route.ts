@@ -15,6 +15,8 @@ router.post(
   cartController.addItemToCart
 );
 
+router.post("/create-order", auth("user"), cartController.createOrder);
+
 router.patch(
   "/remove-from-cart",
   auth("user"),
