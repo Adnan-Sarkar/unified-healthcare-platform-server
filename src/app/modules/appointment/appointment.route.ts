@@ -1,27 +1,54 @@
 import express from "express";
 import { appointmentController } from "./appointment.controller";
+import auth from "../../middleware/auth";
+import validateRequest from "../../middleware/validateRequest";
+import { appointmentValidationSchema } from "./appointment.validation";
 
 const router = express.Router();
 
 router.get(
   "/user-appointment/:id",
-  appointmentController.getUserAppointmentById
+  auth("user", "admin", "super_admin"),
+  appointmentController.getUserAppointments
 );
 
 router.get(
   "/doctor-appointment/:id",
-  appointmentController.getDoctorAppointmentById
+  auth("doctor", "admin", "super_admin"),
+  appointmentController.getDoctorAppointments
 );
 
-router.get("/meta-data", appointmentController.countTotalAppointments);
+router.get(
+  "/statistics",
+  auth("admin", "super_admin"),
+  appointmentController.appointmentStatistics
+);
 
 router.post(
   "/register-appointment",
+  auth("user", "patient"),
+  validateRequest(
+    appointmentValidationSchema.registerAppointmentValidationSchema
+  ),
   appointmentController.createNewAppointment
 );
 
-router.patch("/:id", appointmentController.updateAppointmentById);
+router.patch(
+  "/:id",
+  auth("doctor"),
+  appointmentController.updateAppointmentById
+);
 
-router.delete("/:id", appointmentController.deleteAppointmentById);
+router.patch(
+  "/complete/:id",
+  auth("doctor"),
+  appointmentController.completeAppointment
+);
+
+router.delete(
+  "/:id",
+  auth("super_admin"),
+  appointmentController.deleteAppointmentById
+);
 
 export const appointmentRoutes = router;
