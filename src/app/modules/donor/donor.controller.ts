@@ -113,12 +113,28 @@ const updateDonorInformation = catchAsync(async (req, res) => {
 
 // message to donor-requester
 const sendMessage = catchAsync(async (req, res) => {
-  const result = await donorService.sendMessage();
+  const result = await donorService.sendMessage(req.body, req.user);
+
+  if (result.affectedRows === 0) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Donor message sending failed");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Donor message sent successfully",
+    data: null,
+  });
+});
+
+// get messages
+const getMessages = catchAsync(async (req, res) => {
+  const result = await donorService.getMessages(req.body, req.user);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Retrived messages successfully",
     data: result,
   });
 });
@@ -131,4 +147,5 @@ export const donorController = {
   updateDonationRequest,
   updateDonorInformation,
   sendMessage,
+  getMessages,
 };

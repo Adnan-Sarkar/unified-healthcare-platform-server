@@ -14,6 +14,8 @@ router.get(
   donorController.getMyDonationRequestsFromRequester
 );
 
+router.get("/messages", auth("user", "donor"), donorController.getMessages);
+
 router.post(
   "/register-donor",
   auth("user", "super_admin"),
@@ -28,7 +30,12 @@ router.post(
   donorController.createDonationRequest
 );
 
-router.post("/send-message", donorController.sendMessage);
+router.post(
+  "/send-message",
+  auth("user", "donor"),
+  validateRequest(bloodDonationValidationSchema.sendMessageSchema),
+  donorController.sendMessage
+);
 
 router.patch(
   "/:id",

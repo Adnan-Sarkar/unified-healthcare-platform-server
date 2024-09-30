@@ -1,9 +1,10 @@
 import db from "../../database/db";
-import { TDonationRequest, TDonor, TJWTPayload } from "../../types";
+import { TDonationRequest, TDonor, TJWTPayload, TMessage } from "../../types";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import generateUniqueId from "../../utils/generateUniqueId";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
+import generateCurrentDateTime from "../../utils/generateCurrentDateTime";
 
 // register donor
 const registerDonor = async (donorInfo: Partial<TDonor>, user: TJWTPayload) => {
@@ -165,7 +166,34 @@ const updateDonorInformation = async (
 };
 
 // message to donor-requester
-const sendMessage = async () => {};
+const sendMessage = async (
+  messageData: Omit<TMessage, "id" | "sendTime" | "senderId">,
+  sender: TJWTPayload
+) => {
+  const { receiverId, content } = messageData;
+  const newMessageId = generateUniqueId();
+
+  const [result]: [ResultSetHeader, any] = await db.query(
+    `INSERT INTO messages (id, senderId, receiverId, content, sendTime) VALUES (?, ?, ?, ?, ?)`,
+    [newMessageId, sender.id, receiverId, content, generateCurrentDateTime()]
+  );
+
+  return result;
+};
+
+// get messages
+const getMessages = async (receiverId: string, user: TJWTPayload) => {
+  const { id } = user;
+
+  const [result]: [RowDataPacket[], any] = await db.query(
+    `SELECT * FROM messages
+     WHERE (senderId = ? AND receiverId = ?) OR (senderId = ? AND receiverId = ?)
+     ORDER BY STR_TO_DATE(sendTime, '%m/%d/%Y %h:%i%p') ASC`,
+    [id, receiverId, receiverId, id]
+  );
+
+  return result;
+};
 
 export const donorService = {
   registerDonor,
@@ -175,4 +203,5 @@ export const donorService = {
   updateDonationRequest,
   updateDonorInformation,
   sendMessage,
+  getMessages,
 };

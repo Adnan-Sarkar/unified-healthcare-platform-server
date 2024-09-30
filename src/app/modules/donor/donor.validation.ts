@@ -43,9 +43,20 @@ const updateDonorInformationSchema = z.object({
     .optional(),
 });
 
+const sendMessageSchema = z.object({
+  receiverId: z.string({
+    required_error: "Receiver ID is required",
+    invalid_type_error: "Receiver ID must be a string",
+  }),
+  content: z.string({
+    required_error: "Content is required",
+    invalid_type_error: "Content must be a string",
+  }),
+});
 export const bloodDonationValidationSchema = {
   registerDonorSchema,
   createDonationRequestSchema,
   updateDonationRequestSchema,
   updateDonorInformationSchema,
+  sendMessageSchema,
 };
